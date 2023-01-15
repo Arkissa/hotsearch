@@ -29,12 +29,8 @@ func NewHandleData() *HandleData {
 }
 
 func (h *HandleData) PutRun(run ...Run) {
-	for {
-		for i := 0; i < len(run); i++ {
-			h.Targets <- run[i]
-		}
-		log.LogPut("[INFO] waitting for 30 minute……")
-		<-time.Tick(time.Hour / 3)
+	for i := 0; i < len(run); i++ {
+		h.Targets <- run[i]
 	}
 }
 

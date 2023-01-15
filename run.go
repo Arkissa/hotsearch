@@ -14,7 +14,7 @@ import (
 func run() {
 	k := new(utils.Keyword)
 	handle := NewHandleData()
-	go UpdateKeyword(KeywordPath, handle, k)
+	go UpdateKeywords(handle, k)
 	go handle.Handle()
 
 	tableName := []string{
@@ -26,6 +26,9 @@ func run() {
 		"keywords",
 	}
 
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGTERM, os.Interrupt)
+
 	b := pool.NewBufferPool()
 	c := pool.NewClient()
 	database := utils.NewDatabase(DbPath)
@@ -33,48 +36,55 @@ func run() {
 	targets := target.NewTargets(b, c)
 	cnvd := target.NewCnvd(b, c)
 
-	go Exit(handle, database, b, c)
-	go handle.PutRun(targets, cnvd)
-
 	noFindTable := database.FindTable(tableName...)
 	for i := 0; i < len(noFindTable); i++ {
 		database.CreateTable(noFindTable[i])
 	}
 
+	handle.PutRun(targets, cnvd)
 	for {
-		for website, datas := range <-handle.Data {
-			log.LogPut("[INFO] Get Data %s %d\n", website, len(datas))
-			for num := 0; num < len(datas); num++ {
-				noFindTable = database.FindTable(website)
-				for i := 0; i < len(noFindTable); i++ {
-					if !database.CreateTable(noFindTable[i]) {
+		select {
+		case <-s:
+			Exit(handle, database, b, c)
+		case d, ok := <-handle.Data:
+			if !ok {
+				return
+			}
+			for website, datas := range d {
+				log.LogPut("[INFO] Get Data %s %d\n", website, len(datas))
+				for num := 0; num < len(datas); num++ {
+					noFindTable = database.FindTable(website)
+					for i := 0; i < len(noFindTable); i++ {
+						if !database.CreateTable(noFindTable[i]) {
+							goto jump
+						}
+					}
+
+					if !database.InsertData(website, datas[num]) {
+						log.LogPut("[WARNING] Insert %s %s Error", website, datas[num])
 						goto jump
 					}
 				}
+			jump:
+				database.Deduplication(website)
 
-				if !database.InsertData(website, datas[num]) {
-					log.LogPut("[WARNING] Insert %s %s Error", website, datas[num])
-					goto jump
-				}
 			}
-		jump:
-			database.Deduplication(website)
+		case <-time.Tick(TimeSleep):
+			handle.PutRun(targets, cnvd)
 		}
 	}
 }
 
-func UpdateKeyword(n string, h *HandleData, k *utils.Keyword) {
+func UpdateKeywords(h *HandleData, k *utils.Keyword) {
 	k.Exist = new(utils.Check)
 	for {
-		h.Keywords = k.Keywords(n)
+		log.LogPut("get Keywords")
+		h.Keywords = k.Keywords(KeywordPath)
 		<-time.Tick(time.Second / 2)
 	}
 }
 
 func Exit(c ...Close) {
-	s := make(chan os.Signal, 1)
-	signal.Notify(s, syscall.SIGTERM, os.Interrupt)
-	<-s
 	for i := 0; i < len(c); i++ {
 		c[i].Close()
 	}
