@@ -11,12 +11,14 @@ $ ./hotsearch -h
   -h	Help
   -k string
     	The keyword file Path (default "keywords.csv")
+  -t duration
+    	For example, -time 30s creates a timer of 30 seconds. (default 20m0s)
 ```
 
 ## Q & A
 
 1. 程序多久执行一次
-    > 默认半小时执行一次
+    > 可以自定义时间, 默认20分钟执行一次
 
 2. 如何存储的数据
     > 使用的是sqlite3数据库会自动创建数据库文件并且自动创建表
