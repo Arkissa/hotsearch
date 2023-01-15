@@ -6,7 +6,7 @@ import (
 )
 
 func LogOutErr(msg string, errs error) {
-	logFile, err := os.OpenFile("hotsearch.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	logFile, err := os.OpenFile("/home/bulabula/scripts/bin/hotsearch/hotsearch.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Println("log file open err: ", err)
 		return

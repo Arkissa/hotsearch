@@ -45,7 +45,7 @@ func run() {
 	for {
 		select {
 		case <-s:
-			Exit(handle, database, b, c)
+			Die(handle, database, b, c)
 		case d, ok := <-handle.Data:
 			if !ok {
 				return
@@ -84,7 +84,7 @@ func UpdateKeywords(h *HandleData, k *utils.Keyword) {
 	}
 }
 
-func Exit(c ...Close) {
+func Die(c ...Close) {
 	for i := 0; i < len(c); i++ {
 		c[i].Close()
 	}
