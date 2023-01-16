@@ -11,6 +11,7 @@ type JsonDate struct {
 }
 
 func (j *JsonDate) Decoder() {
+
     if err := json.Unmarshal(j.Date, j.Decode); err != nil {
         log.LogOutErr("json unmarshal err", err)
     }

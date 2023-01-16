@@ -25,7 +25,7 @@ func NewBufferPool() *BufferPool {
 func (p *BufferPool) buffers() {
 	bufferPool := sync.Pool{
 		New: func() any {
-			return bytes.NewBuffer(make([]byte, 1024))
+			return bytes.NewBuffer(make([]byte, 512))
 		},
 	}
 

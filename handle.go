@@ -16,6 +16,7 @@ type Close interface {
 }
 
 type HandleData struct {
+	Ticker   *time.Ticker
 	Targets  chan Run
 	Data     chan map[string][]string
 	Keywords []string
@@ -29,8 +30,11 @@ func NewHandleData() *HandleData {
 }
 
 func (h *HandleData) PutRun(run ...Run) {
-	for i := 0; i < len(run); i++ {
-		h.Targets <- run[i]
+	for {
+		for i := 0; i < len(run); i++ {
+			h.Targets <- run[i]
+		}
+		<-h.Ticker.C
 	}
 }
 
@@ -50,6 +54,7 @@ func (h *HandleData) Handle() {
 			}
 		}
 		h.Data <- result
+		result = nil
 	}
 }
 

@@ -31,7 +31,7 @@ type TargetHandle struct {
 func NewTargets(b *pool.BufferPool, c *pool.ClientPool) *TargetHandle {
 
 	var targets []Target
-	targets = append(targets, new(Blibili), new(WeiBo), new(DouYin), new(WeiBu))
+	targets = append(targets, new(Blibili), new(WeiBo), new(DouYin), new(WeiBu), new(FreeBuf))
 
 	return &TargetHandle{
 		targets: targets,
@@ -41,7 +41,6 @@ func NewTargets(b *pool.BufferPool, c *pool.ClientPool) *TargetHandle {
 }
 
 func (t *TargetHandle) Do() map[string][]string {
-	t.data = make(map[string][]string)
 	for i := 0; i < len(t.targets); i++ {
 		switch v := t.targets[i].New().(type) {
 		case *Blibili:
@@ -60,8 +59,13 @@ func (t *TargetHandle) Do() map[string][]string {
 			t.name = v.Name
 			t.header = v.Header
 			t.urls = v.Urls
+		case *FreeBuf:
+			t.name = v.Name
+			t.header = v.Header
+			t.urls = v.Urls
 		}
 
+		t.data = make(map[string][]string)
 		for body, url := range t.urls {
 			log.LogPut("[INFO] Start Request %s %s\n", t.name, url)
 			t.c.Signal <- struct{}{}
@@ -70,7 +74,6 @@ func (t *TargetHandle) Do() map[string][]string {
 			request := utils.NewRequest("GET", url, "", client)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-			defer cancel()
 
 			request.Ctx = ctx
 			request.Header = t.header
@@ -82,6 +85,7 @@ func (t *TargetHandle) Do() map[string][]string {
 
 			_, byteBody := request.Do(buffer)
 
+			cancel()
 			json := new(utils.JsonDate)
 
 			json.Date = byteBody

@@ -13,8 +13,10 @@ import (
 
 func run() {
 	k := new(utils.Keyword)
+	k.Exist = new(utils.Check)
+	k.Tick = time.NewTicker(time.Second / 2)
 	handle := NewHandleData()
-	go UpdateKeywords(handle, k)
+    handle.Ticker = time.NewTicker(TimeSleep)
 	go handle.Handle()
 
 	tableName := []string{
@@ -23,6 +25,7 @@ func run() {
 		"weibo",
 		"weibu",
 		"cnvd",
+		"freebuf",
 		"keywords",
 	}
 
@@ -35,17 +38,20 @@ func run() {
 
 	targets := target.NewTargets(b, c)
 	cnvd := target.NewCnvd(b, c)
+    
+	go handle.PutRun(targets, cnvd)
 
 	noFindTable := database.FindTable(tableName...)
 	for i := 0; i < len(noFindTable); i++ {
 		database.CreateTable(noFindTable[i])
 	}
 
-	handle.PutRun(targets, cnvd)
 	for {
 		select {
 		case <-s:
-			Die(handle, database, b, c)
+			die(handle, database, b, c)
+            k.Tick.Stop()
+            handle.Ticker.Stop()
 		case d, ok := <-handle.Data:
 			if !ok {
 				return
@@ -67,24 +73,14 @@ func run() {
 				}
 			jump:
 				database.Deduplication(website)
-
 			}
-		case <-time.Tick(TimeSleep):
-			handle.PutRun(targets, cnvd)
+		case <-k.Tick.C:
+			handle.Keywords = k.Keywords(KeywordPath)
 		}
 	}
 }
 
-func UpdateKeywords(h *HandleData, k *utils.Keyword) {
-	k.Exist = new(utils.Check)
-	for {
-		log.LogPut("get Keywords")
-		h.Keywords = k.Keywords(KeywordPath)
-		<-time.Tick(time.Second / 2)
-	}
-}
-
-func Die(c ...Close) {
+func die(c ...Close) {
 	for i := 0; i < len(c); i++ {
 		c[i].Close()
 	}

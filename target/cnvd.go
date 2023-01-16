@@ -22,10 +22,11 @@ type Cnvd struct {
 	header  map[string]string
 	replace []string
 	xpaths  []string
-	format  string
-	url     string
+	js      *goja.Runtime
 	b       *pool.BufferPool
 	c       *pool.ClientPool
+	format  string
+	url     string
 }
 
 func NewCnvd(b *pool.BufferPool, c *pool.ClientPool) *Cnvd {
@@ -63,6 +64,7 @@ func NewCnvd(b *pool.BufferPool, c *pool.ClientPool) *Cnvd {
 	xpaths[5] = "/html/body/div[3]/div[7]/div/div[2]/ul/li/a"
 
 	return &Cnvd{
+		js:      goja.New(),
 		rpx:     rpx,
 		header:  header,
 		replace: replace,
@@ -74,9 +76,8 @@ func NewCnvd(b *pool.BufferPool, c *pool.ClientPool) *Cnvd {
 	}
 }
 
-func (c *Cnvd) runJs(jsCode string) string {
-	js := goja.New()
-	jsReturn, err := js.RunString(jsCode)
+func (c *Cnvd) runJs(jsCode *string) string {
+	jsReturn, err := c.js.RunString(*jsCode)
 	if err != nil {
 		log.LogOutErr("Run js err", err)
 		return ""
@@ -84,23 +85,21 @@ func (c *Cnvd) runJs(jsCode string) string {
 	return jsReturn.String()
 }
 
-func (c *Cnvd) strReplace(str string) string {
-	for _, replace := range c.replace {
-		str = strings.ReplaceAll(str, replace, "")
+func (c *Cnvd) strReplace(str *string) {
+	for i := 0; i < len(c.replace); i++ {
+		*str = strings.ReplaceAll(*str, c.replace[i], "")
 	}
-	return str
 }
 
-func (c *Cnvd) rgx(str string) string {
+func (c *Cnvd) rgx(str *string) {
 	for rpx, value := range c.rpx {
 		r, err := regexp.Compile(rpx)
 		if err != nil {
 			log.LogOutErr("regexp set err", err)
 			continue
 		}
-		str = r.ReplaceAllString(str, value)
+		*str = r.ReplaceAllString(*str, value)
 	}
-	return str
 }
 
 func (c *Cnvd) xpath(body io.Reader) []string {
@@ -111,16 +110,17 @@ func (c *Cnvd) xpath(body io.Reader) []string {
 	}
 
 	var data []string
-	for _, xpath := range c.xpaths {
-		lables, err := htmlquery.QueryAll(doc, xpath)
+	for i := 0; i < len(c.xpaths); i++ {
+		lables, err := htmlquery.QueryAll(doc, c.xpaths[i])
 		if err != nil {
-			log.LogOutErr("xpath err"+xpath, err)
+			log.LogOutErr("xpath err"+c.xpaths[i], err)
 			continue
 		}
 
 		for _, lable := range lables {
 			data = append(data, htmlquery.SelectAttr(lable, "title"))
 		}
+
 	}
 
 	return data
@@ -150,31 +150,32 @@ request:
 
 	request.Ctx = ctx
 	responseHeader, byteBody := request.Do(buffer)
+	cancel()
 	body = string(byteBody)
 
 	if num == 0 {
 		if responseHeader["Set-Cookie"] != nil {
-			cookie = c.strReplace(responseHeader["Set-Cookie"][0])
+			cookie = responseHeader["Set-Cookie"][0]
+			c.strReplace(&cookie)
 		}
 	}
 
 	if !strings.Contains(body, "<title>") {
-		body = c.strReplace(body)
-		body = c.rgx(body)
+		c.strReplace(&body)
+		c.rgx(&body)
 		if strings.Contains(body, "var _0x") {
 			body = fmt.Sprintf(c.format, body)
 		}
-		body = c.runJs(body)
+		body = c.runJs(&body)
 		request.Header["Cookie"] = fmt.Sprintf("%s %s", cookie, body)
 	} else {
 		done = true
 	}
 
-	cancel()
 	p.Put(buffer)
 	buffer = nil
 
-	if num >= 10 {
+	if num >= 5 {
 		done = true
 	}
 
@@ -183,7 +184,7 @@ request:
 		goto request
 	}
 
-    cl.Put(client)
+	cl.Put(client)
 	result["cnvd"] = c.xpath(strings.NewReader(body))
 
 	return result

@@ -5,6 +5,7 @@ import (
 	"hotsearch/log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Status interface {
@@ -14,6 +15,7 @@ type Status interface {
 type Check struct{}
 
 type Keyword struct {
+    Tick *time.Ticker
 	Exist Status
 }
 
