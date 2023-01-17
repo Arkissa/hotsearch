@@ -11,23 +11,33 @@ type BlibiliData struct {
 }
 
 type Blibili struct {
-	Name   string
-	Header map[string]string
-	Urls   map[TargetData]string
+	name   string
+	header map[string]string
+	urls   map[TargetData]string
 }
 
-func (b *Blibili) New() any {
+func (b *Blibili) New() {
 	urls := make(map[TargetData]string)
 	header := make(map[string]string)
 	header["referer"] = "https://www.bilibili.com"
 	header["user-agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 
 	urls[new(BlibiliData)] = "https://api.bilibili.com/x/web-interface/wbi/search/square?limit=50"
-	b.Name = "bilibili"
-	b.Header = header
-	b.Urls = urls
+	b.name = "bilibili"
+	b.header = header
+	b.urls = urls
+}
 
-	return b
+func (b *Blibili) Urls() map[TargetData]string {
+	return b.urls
+}
+
+func (b *Blibili) Name() string {
+	return b.name
+}
+
+func (b *Blibili) Header() map[string]string {
+	return b.header
 }
 
 func (b *BlibiliData) Decode() []string {

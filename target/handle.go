@@ -11,7 +11,10 @@ import (
 )
 
 type Target interface {
-	New() any
+	New()
+	Name() string
+	Urls() map[TargetData]string
+	Header() map[string]string
 }
 
 type TargetData interface {
@@ -20,10 +23,6 @@ type TargetData interface {
 
 type TargetHandle struct {
 	targets []Target
-	header  map[string]string
-	data    map[string][]string
-	urls    map[TargetData]string
-	name    string
 	b       *pool.BufferPool
 	c       *pool.ClientPool
 }
@@ -41,33 +40,15 @@ func NewTargets(b *pool.BufferPool, c *pool.ClientPool) *TargetHandle {
 }
 
 func (t *TargetHandle) Do() map[string][]string {
+    datas := make(map[string][]string)
 	for i := 0; i < len(t.targets); i++ {
-		switch v := t.targets[i].New().(type) {
-		case *Blibili:
-			t.name = v.Name
-			t.header = v.Header
-			t.urls = v.Urls
-		case *WeiBo:
-			t.name = v.Name
-			t.header = v.Header
-			t.urls = v.Urls
-		case *DouYin:
-			t.name = v.Name
-			t.header = v.Header
-			t.urls = v.Urls
-		case *WeiBu:
-			t.name = v.Name
-			t.header = v.Header
-			t.urls = v.Urls
-		case *FreeBuf:
-			t.name = v.Name
-			t.header = v.Header
-			t.urls = v.Urls
-		}
+		t.targets[i].New()
+		urls := t.targets[i].Urls()
+		name := t.targets[i].Name()
+		header := t.targets[i].Header()
 
-		t.data = make(map[string][]string)
-		for body, url := range t.urls {
-			log.LogPut("[INFO] Start Request %s %s\n", t.name, url)
+		for targetData, url := range urls {
+			log.LogPut("[INFO] Start Request %s %s\n", name, url)
 			t.c.Signal <- struct{}{}
 			c := <-t.c.Client
 			client := c.Get().(*http.Client)
@@ -76,7 +57,7 @@ func (t *TargetHandle) Do() map[string][]string {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 
 			request.Ctx = ctx
-			request.Header = t.header
+			request.Header = header
 
 			t.b.Signal <- struct{}{}
 			p := <-t.b.Buffer
@@ -89,9 +70,9 @@ func (t *TargetHandle) Do() map[string][]string {
 			json := new(utils.JsonDate)
 
 			json.Date = byteBody
-			json.Decode = body
+			json.Decode = targetData
 			json.Decoder()
-			t.data[t.name] = append(t.data[t.name], body.Decode()...)
+			datas[name] = append(datas[name], targetData.Decode()...)
 
 			c.Put(client)
 			client = nil
@@ -100,5 +81,5 @@ func (t *TargetHandle) Do() map[string][]string {
 		}
 	}
 
-	return t.data
+	return datas
 }

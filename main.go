@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"time"
 )
 
@@ -20,7 +19,6 @@ func main() {
 	flag.DurationVar(&TimeSleep, "t", time.Hour/3, "For example, -time 30s creates a timer of 30 seconds.")
 	flag.Parse()
 
-    log.Println(TimeSleep.Seconds())
 	if Help {
 		flag.PrintDefaults()
 		return
