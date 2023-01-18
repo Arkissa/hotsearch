@@ -54,12 +54,11 @@ func (h *HandleData) Handle() {
 			}
 		}
 		h.Data <- result
-		result = nil
 	}
 }
 
 func (h *HandleData) Close() {
-	for len(h.Targets) != 0 || len(h.Data) != 0 {
+	for len(h.Targets) > 0 || len(h.Data) > 0 {
 		time.Sleep(1e6)
 	}
 	close(h.Targets)

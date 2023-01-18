@@ -10,9 +10,9 @@ import (
 )
 
 type Request struct {
+	Header  map[string]string
 	request *http.Request
 	client  *http.Client
-	Header  map[string]string
 	Ctx     context.Context
 }
 

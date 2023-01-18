@@ -7,8 +7,8 @@ import (
 )
 
 type BufferPool struct {
-	Signal chan struct{}
 	Buffer chan *sync.Pool
+	Signal chan struct{}
 }
 
 func NewBufferPool() *BufferPool {

@@ -11,10 +11,10 @@ import (
 )
 
 type Target interface {
-	New()
-	Name() string
-	Urls() map[TargetData]string
+	Urls() map[TargetData][2]string
 	Header() map[string]string
+	Name() string
+	New()
 }
 
 type TargetData interface {
@@ -28,7 +28,6 @@ type TargetHandle struct {
 }
 
 func NewTargets(b *pool.BufferPool, c *pool.ClientPool) *TargetHandle {
-
 	var targets []Target
 	targets = append(targets, new(Blibili), new(WeiBo), new(DouYin), new(WeiBu), new(FreeBuf))
 
@@ -48,11 +47,11 @@ func (t *TargetHandle) Do() map[string][]string {
 		header := t.targets[i].Header()
 
 		for targetData, url := range urls {
-			log.LogPut("[INFO] Start Request %s %s\n", name, url)
+			log.LogPut("[INFO] Start Request %s %s\n", name, url[1])
 			t.c.Signal <- struct{}{}
 			c := <-t.c.Client
 			client := c.Get().(*http.Client)
-			request := utils.NewRequest("GET", url, "", client)
+			request := utils.NewRequest(url[0], url[1], "", client)
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 
@@ -65,17 +64,16 @@ func (t *TargetHandle) Do() map[string][]string {
 			buffer.Reset()
 
 			_, byteBody := request.Do(buffer)
-
 			cancel()
-			json := new(utils.JsonDate)
+			c.Put(client)
+			client = nil
 
+			json := new(utils.JsonDate)
 			json.Date = byteBody
 			json.Decode = targetData
 			json.Decoder()
 			datas[name] = append(datas[name], targetData.Decode()...)
 
-			c.Put(client)
-			client = nil
 			p.Put(buffer)
 			buffer = nil
 		}

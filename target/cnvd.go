@@ -185,6 +185,7 @@ request:
 	}
 
 	cl.Put(client)
+	client = nil
 	result["cnvd"] = c.xpath(strings.NewReader(body))
 
 	return result

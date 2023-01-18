@@ -13,10 +13,10 @@ import (
 
 func run() {
 	k := new(utils.Keyword)
+	handle := NewHandleData()
 	k.Exist = new(utils.Check)
 	k.Tick = time.NewTicker(time.Second / 2)
-	handle := NewHandleData()
-    handle.Ticker = time.NewTicker(TimeSleep)
+	handle.Ticker = time.NewTicker(TimeSleep)
 	go handle.Handle()
 
 	tableName := []string{
@@ -31,11 +31,10 @@ func run() {
 
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGTERM, os.Interrupt)
-
 	b := pool.NewBufferPool()
 	c := pool.NewClient()
-	database := utils.NewDatabase(DbPath)
 
+	database := utils.NewDatabase(DbPath)
 	targets := target.NewTargets(b, c)
 	cnvd := target.NewCnvd(b, c)
     
@@ -50,8 +49,8 @@ func run() {
 		select {
 		case <-s:
 			die(handle, database, b, c)
-            k.Tick.Stop()
-            handle.Ticker.Stop()
+			k.Tick.Stop()
+			handle.Ticker.Stop()
 		case d, ok := <-handle.Data:
 			if !ok {
 				return
