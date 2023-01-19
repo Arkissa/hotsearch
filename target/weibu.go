@@ -1,6 +1,8 @@
 package target
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type WeiBuData1 struct {
 	Data struct {
@@ -25,25 +27,25 @@ type WeiBuData2 struct {
 }
 
 type WeiBu struct {
-	urls   map[TargetData][2]string
+	urls   map[TargetData][3]any
 	header map[string]string
 	name   string
 }
 
 func (w *WeiBu) New() {
-	var urls = make(map[TargetData][2]string)
+	var urls = make(map[TargetData][3]any)
 	header := make(map[string]string)
 	header["referer"] = "https://x.threatbook.com/"
 	header["user-agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 
-	urls[new(WeiBuData1)] = [2]string{"GET", "https://x.threatbook.com/v5/node/vnext/searchAndIntelRecommend"}
-	urls[new(WeiBuData2)] = [2]string{"GET", "https://x.threatbook.com/v5/node/alltopics?page=1"}
+	urls[new(WeiBuData1)] = [3]any{"GET", "https://x.threatbook.com/v5/node/vnext/searchAndIntelRecommend", nil}
+	urls[new(WeiBuData2)] = [3]any{"GET", "https://x.threatbook.com/v5/node/alltopics?page=1", nil}
 	w.name = "weibu"
 	w.header = header
 	w.urls = urls
 }
 
-func (b *WeiBu) Urls() map[TargetData][2]string {
+func (b *WeiBu) Urls() map[TargetData][3]any {
 	return b.urls
 }
 

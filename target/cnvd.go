@@ -137,7 +137,7 @@ func (c *Cnvd) Do() map[string][]string {
 	c.c.Signal <- struct{}{}
 	cl := <-c.c.Client
 	client := cl.Get().(*http.Client)
-	request := utils.NewRequest("GET", c.url, "", client)
+	request := utils.NewRequest("GET", c.url, nil, client)
 	request.Header = c.header
 	log.LogPut("[INFO] Start Request cnvd")
 request:

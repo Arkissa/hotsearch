@@ -6,7 +6,6 @@ import (
 	"hotsearch/log"
 	"io"
 	"net/http"
-	"strings"
 )
 
 type Request struct {
@@ -21,8 +20,8 @@ type Response struct {
 	Header http.Header
 }
 
-func NewRequest(method, url, body string, client *http.Client) *Request {
-	request, err := http.NewRequest(method, url, strings.NewReader(body))
+func NewRequest(method, url string, body io.Reader, client *http.Client) *Request {
+	request, err := http.NewRequest(method, url, body)
 
 	if err != nil {
 		log.LogOutErr("Cread New Request Err", err)

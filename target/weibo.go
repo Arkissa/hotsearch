@@ -1,7 +1,7 @@
 package target
 
 type WeiBo struct {
-	urls   map[TargetData][2]string
+	urls   map[TargetData][3]any
 	header map[string]string
 	name   string
 }
@@ -19,18 +19,18 @@ type WeiBoData struct {
 
 func (w *WeiBo) New() {
 
-	urls := make(map[TargetData][2]string)
+	urls := make(map[TargetData][3]any)
 	header := make(map[string]string)
 	header["referer"] = "https://m.weibo.cn/search?containerid=231583"
 	header["user-agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 
-	urls[new(WeiBoData)] = [2]string{"GET", "https://m.weibo.cn/api/container/getIndex?containerid=106003%26filter_type%3Drealtimehot&title=%E5%BE%AE%E5%8D%9A%E7%83%AD%E6%90%9C"}
+	urls[new(WeiBoData)] = [3]any{"GET", "https://m.weibo.cn/api/container/getIndex?containerid=106003%26filter_type%3Drealtimehot&title=%E5%BE%AE%E5%8D%9A%E7%83%AD%E6%90%9C", nil}
 	w.name = "weibo"
 	w.header = header
 	w.urls = urls
 }
 
-func (b *WeiBo) Urls() map[TargetData][2]string {
+func (b *WeiBo) Urls() map[TargetData][3]any {
 	return b.urls
 }
 
